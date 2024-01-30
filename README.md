@@ -1,6 +1,10 @@
 PgBouncer Docker image
 ======================
 
+## Why the fork?
+
+We use this to run PgBouncer in Render, and in order to use a custom pgbouncer.ini file we have to use Render's "Secret Files" feature which we need to copy into the image during build time. That's the only change we've made to this repo (in the Dockerfile).
+
 This is a minimal PgBouncer image, based on Alpine Linux.
 
 Features:
