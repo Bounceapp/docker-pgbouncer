@@ -29,6 +29,8 @@ RUN \
   apk del --purge autoconf autoconf-doc automake udns-dev curl gcc libc-dev libevent-dev libtool make openssl-dev pkgconfig
 
 COPY entrypoint.sh /entrypoint.sh
+COPY pgbouncer.ini /etc/pgbouncer/pgbouncer.ini
+RUN chown -c postgres /etc/pgbouncer/pgbouncer.ini
 USER postgres
 EXPOSE 5432
 ENTRYPOINT ["/entrypoint.sh"]
