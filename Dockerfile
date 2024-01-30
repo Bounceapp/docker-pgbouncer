@@ -22,6 +22,9 @@ COPY entrypoint.sh /entrypoint.sh
 COPY --from=build /pgbouncer/pgbouncer /usr/bin
 COPY --from=build /pgbouncer/etc/pgbouncer.ini /etc/pgbouncer/pgbouncer.ini.example
 COPY --from=build /pgbouncer/etc/userlist.txt /etc/pgbouncer/userlist.txt.example
+
+COPY pgbouncer.ini /etc/pgbouncer/pgbouncer.ini
+RUN chown -c postgres /etc/pgbouncer/pgbouncer.ini
 EXPOSE 5432
 USER postgres
 ENTRYPOINT ["/entrypoint.sh"]
