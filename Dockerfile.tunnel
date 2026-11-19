@@ -1,0 +1,30 @@
+# PgBouncer on loopback plus cloudflared, for engineer access to the read replica through Cloudflare Access.
+# The app pooler keeps using ./Dockerfile; this image has no inbound port.
+FROM cloudflare/cloudflared:2026.10.7 AS cloudflared
+
+FROM alpine:3.22 AS build
+ARG VERSION=1.26.1
+
+# hadolint ignore=DL3003,DL3018
+RUN apk add --no-cache autoconf automake curl gcc libc-dev libevent-dev libtool make openssl-dev pkgconfig
+
+RUN curl -sS -o /pgbouncer.tar.gz -L https://pgbouncer.github.io/downloads/files/$VERSION/pgbouncer-$VERSION.tar.gz && \
+  tar -xzf /pgbouncer.tar.gz && mv /pgbouncer-$VERSION /pgbouncer
+
+RUN cd /pgbouncer && ./configure --prefix=/usr && make -j$(nproc) pgbouncer && strip pgbouncer
+
+FROM alpine:3.22
+
+# pgbouncer.ini and userlist.txt are Render secret files, read at runtime from /etc/secrets so the
+# PlanetScale password never lands in an image layer. Render asks for the app user to be in group 1000
+# to read them (https://render.com/docs/docker-secrets).
+RUN apk add --no-cache libevent && \
+  addgroup -g 1000 pgbouncer && \
+  adduser -D -H -u 1000 -G pgbouncer pgbouncer
+
+COPY --from=build /pgbouncer/pgbouncer /usr/bin/pgbouncer
+COPY --from=cloudflared /usr/local/bin/cloudflared /usr/bin/cloudflared
+COPY tunnel-entrypoint.sh /tunnel-entrypoint.sh
+
+USER pgbouncer
+ENTRYPOINT ["/tunnel-entrypoint.sh"]
